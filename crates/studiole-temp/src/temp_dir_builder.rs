@@ -2,10 +2,10 @@ use crate::TempDir;
 use chrono::Local;
 use std::env::temp_dir;
 use std::fs::create_dir_all;
-use std::io::Error as IoError;
+use std::io;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::thread::current as current_thread;
+use std::thread;
 
 /// Counter appended to the final path segment by [`TempDirBuilder::build`]
 /// and [`TempDirBuilder::create`] to guarantee unique paths within a process.
@@ -77,7 +77,7 @@ impl TempDirBuilder {
     ///
     /// - Appends `-{n}` to the final path segment when [`COUNTER`] is non-zero
     /// - See [`TempDirBuilder::create`] to also create the directory on disk
-    pub fn build(mut self) -> Result<TempDir, IoError> {
+    pub fn build(mut self) -> Result<TempDir, io::Error> {
         self.append_number();
         Ok(TempDir::new(self.path, self.remove))
     }
@@ -86,7 +86,7 @@ impl TempDirBuilder {
     ///
     /// - Appends `-{n}` to the final path segment when [`COUNTER`] is non-zero
     /// - See [`TempDirBuilder::build`] to skip filesystem creation
-    pub fn create(mut self) -> Result<TempDir, IoError> {
+    pub fn create(mut self) -> Result<TempDir, io::Error> {
         self.append_number();
         create_dir_all(&self.path)?;
         Ok(TempDir::new(self.path, self.remove))
@@ -98,7 +98,7 @@ fn get_datetime() -> String {
 }
 
 fn get_test_name_underscored() -> String {
-    current_thread()
+    thread::current()
         .name()
         .expect("should be able to get test name")
         .replace(':', "_")
